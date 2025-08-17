@@ -374,6 +374,6 @@ def main(p_session: Session
     ret = main_matrix(p_session
     ,p_stage_path ,p_datafile ,p_target_stage
     ,p_segments_per_task ,p_warehouse
-    ,5 ,15)
+    ,5 ,10)
 
     return ret
