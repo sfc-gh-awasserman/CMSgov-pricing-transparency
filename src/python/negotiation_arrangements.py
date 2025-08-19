@@ -306,7 +306,7 @@ def parse_breakdown_save_wrapper(p_session: Session
         #     parsing_error = str(e)
 
     elif json_fl.endswith('.gz'):
-        with gzip.open(SnowflakeFile.open(json_fl,require_scoped_url=False),'r') as f:
+        with gzip.open(SnowflakeFile.open(json_fl, 'rb', require_scoped_url=False), 'r') as f:
             iterated_segments ,eof_reached ,stored_segment_count = parse_breakdown_save(p_session 
                 ,p_stage_path ,p_datafile ,p_target_stage 
                 ,p_from_seg ,p_to_seg ,f)   
