@@ -28,11 +28,11 @@ TASK_TO_SEGMENTIDS_TBL = 'task_to_segmentids'
 
 # Use this matrix configuration for files that 
 # are smaller < 1TB for ex from Priority health
-# DAG_MATRIX_SHAPE = (5,15)
+DAG_MATRIX_SHAPE = (5,15)
 
 # Use this matrix configuration for files that 
 # are larger like 1TB sizes from CIGNA
-DAG_MATRIX_SHAPE = (10,8)
+# DAG_MATRIX_SHAPE = (10,8)
 
 # 86400000 => 1 day
 # 3600000 => 1 hour
@@ -151,7 +151,6 @@ def create_root_task_and_fh_loader(p_session: Session
         ,f'''
             create or replace task {root_task_name}
                 warehouse = {p_warehouse}
-                schedule = 'using cron 30 2 L 6 * UTC'
                 comment = 'DAG to load data for file: {p_datafile}'
                 as
                 begin

@@ -108,7 +108,7 @@ def parse_breakdown_save_wrapper(p_session: Session
                 ,p_stage_path ,p_datafile ,f)
 
     elif json_fl.endswith('.gz'):
-        with gzip.open(SnowflakeFile.open(json_fl,require_scoped_url=False),'r') as f:
+        with gzip.open(SnowflakeFile.open(json_fl,'rb',require_scoped_url=False),'r') as f:
             l_fl_header = parse_header_elements(p_session 
                 ,p_stage_path ,p_datafile ,f)   
 
