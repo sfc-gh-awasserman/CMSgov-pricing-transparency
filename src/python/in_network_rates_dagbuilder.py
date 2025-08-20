@@ -228,48 +228,42 @@ def create_subtasks(p_session: Session ,p_root_task_name: str
 
     # --- MODIFICATION START ---
 
-    # warehouse can be one or multiple separated by ','
+    #warehouse can be one or multiple seperated by ','
     warehouses = p_warehouse.split(',') if (',' in p_warehouse) else [p_warehouse]
-    num_warehouses = len(warehouses)
+    warehouses_spread = warehouses * ((DAG_MATRIX_SHAPE[0] * DAG_MATRIX_SHAPE[1]) + 2)
+    wh_idx = 1
 
-    # We now iterate through the dag matrix and define the tasks.
-    # To properly spread the load, we iterate column by column. This ensures
-    # that tasks running in parallel (those in the same column) are assigned
-    # to different warehouses.
-    num_rows, num_cols = task_matrix_dag.shape
-    for c_idx in range(num_cols):
-        for r_idx in range(num_rows):
-            task_name, preceding_task = task_matrix_dag[r_idx][c_idx]
-            
-            l = len(task_name.split('_'))
-            range_to = task_name.split('_')[l-1]
-            range_from = task_name.split('_')[l-2]
+    # We now iterate through the dag matrix and define the tasks
+    task_matrix_dag_asarray = task_matrix_dag.flatten()
+    for task_name ,preceding_task in task_matrix_dag_asarray:
+        l = len(task_name.split('_'))
+        range_to = task_name.split('_')[l-1]
+        range_from = task_name.split('_')[l-2]
 
-            # Determine the warehouse to use by cycling through the list
-            # based on the task's row index. This distributes the warehouses
-            # across the parallel tasks in each column.
-            l_warehouse = warehouses[r_idx % num_warehouses]
+        #determine the warehouse to use from the list of warehouses
+        l_warehouse = warehouses_spread[wh_idx]
+        wh_idx += 1
 
-            sql_stmts = [
-                f'''
-                    create or replace task {task_name}
-                    warehouse = {l_warehouse}
-                    user_task_timeout_ms = {USER_TASK_TIMEOUT}
-                    comment = 'negotiated_arrangements segment range [{range_from} - {range_to}] data ingestor '
-                    after {preceding_task}
-                    as
-                    begin
-                        call parse_negotiation_arrangement_segments(
-                            '{p_stage_path}' ,'{p_datafile}' ,'{p_target_stage}' 
-                            ,{range_from} ,{range_to} );
+        sql_stmts = [
+            f'''
+                create or replace task {task_name}
+                warehouse = {l_warehouse}
+                user_task_timeout_ms = {USER_TASK_TIMEOUT}
+                comment = 'negotiated_arrangements segment range [{range_from} - {range_to}] data ingestor '
+                after {preceding_task}
+                as
+                begin
+                    call parse_negotiation_arrangement_segments(
+                        '{p_stage_path}' ,'{p_datafile}' ,'{p_target_stage}' 
+                        ,{range_from} ,{range_to} );
 
-                        alter task if exists {task_name} suspend;
-                    end;
-                '''
-                ,f''' alter task if exists  {task_name} resume; '''
-            ]
-            for stmt in sql_stmts:
-                p_session.sql(stmt).collect()
+                    alter task if exists {task_name} suspend;
+                end;
+            '''
+            ,f''' alter task if exists  {task_name} resume; '''
+        ]
+        for stmt in sql_stmts:
+            p_session.sql(stmt).collect()
 
     # --- MODIFICATION END ---
     
